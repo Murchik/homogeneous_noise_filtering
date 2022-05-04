@@ -1,30 +1,10 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.io import wavfile
-from scipy.fft import fft, ifft, fftfreq
+import librosa
+import plot
 
-# Чтение синусоиды из файла
-sample_rate, signal = wavfile.read("audio/Jason Walsh - Renegade_01.wav")
-sample_num = len(signal)
+# Load signal
+signal, sample_rate = librosa.load("audio/Jason Walsh - Renegade_01.wav")
 
-# Быстрое преобразование фурье
-signal_fft = fft(signal)
-
-# DO WORK DO
-
-# Обратное преобразование фурье
-signal_ifft = ifft(signal_fft)
-
-# Запись результата в файл
-outputMatrix = np.array(signal_ifft, dtype=np.int16)
-wavfile.write("audio/out.wav", sample_rate, outputMatrix)
-
-# Вывод на график
-signal_magnitude = np.absolute(signal_fft)
-frequency = np.linspace(0, sample_rate, sample_num)
-frequency_max = len(signal_magnitude) // 2
-plt.figure(figsize=(18, 8))
-plt.plot(frequency[:frequency_max], signal_magnitude[:frequency_max])
-plt.xlabel("Frequency (Hz)")
-plt.ylabel("Magnitude")
-plt.show()
+# Plot signal
+# plot.signal(signal, sample_rate)
+# plot.magnitude_spectrum(signal, sample_rate)
+plot.spectrogram(signal, sample_rate)
