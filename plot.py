@@ -44,11 +44,11 @@ def magnitude_spectrum(signal, sample_rate,
 
 def spectrogram(signal, sample_rate,
                 y_axis="log",
-                frame_size=2**11, hop_size=2**9):
+                frame_size=2**11, hop_length=2**9):
     # Получение матрицы распределения спектров во времени (спектрограммы):
     # по сигналу перемещается окно размером frame_size с шагом hop_size,
     # к каждому полученному таким окном фрейму применяется БПФ
-    signal_stft = librosa.stft(signal, n_fft=frame_size, hop_length=hop_size)
+    signal_stft = librosa.stft(signal, n_fft=frame_size, hop_length=hop_length)
 
     # Переход от комплексного результата к абсолютному значению сигнала
     y_scale = np.abs(signal_stft) ** 2
@@ -60,7 +60,7 @@ def spectrogram(signal, sample_rate,
     plt.figure(figsize=(18, 5))
     librosa.display.specshow(y_log_scale,
                              sr=sample_rate,
-                             hop_length=hop_size,
+                             hop_length=hop_length,
                              x_axis="time",
                              y_axis=y_axis)
     plt.colorbar(format="%+2.f")
