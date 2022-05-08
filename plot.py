@@ -44,10 +44,11 @@ def magnitude_spectrum(signal, sample_rate,
 
 def spectrogram(signal, sample_rate,
                 y_axis="log",
-                frame_size=2**11, hop_length=2**9):
+                frame_size=2048, hop_length=512):
     # Получение матрицы распределения спектров во времени (спектрограммы):
     # по сигналу перемещается окно размером frame_size с шагом hop_size,
     # к каждому полученному таким окном фрейму применяется БПФ
+    signal = np.ndarray.astype(signal, dtype=np.float16)
     signal_stft = librosa.stft(signal, n_fft=frame_size, hop_length=hop_length)
 
     # Переход от комплексного результата к абсолютному значению сигнала
