@@ -2,8 +2,15 @@ import collections
 import webrtcvad
 
 
-class VoiceSegment:
+class VoiceSegment(object):
     _frames: list
+    start_frame_num: int
+    end_frame_num: int
+
+    def __init__(self):
+        self._frames = []
+        self.start_frame_num = 0
+        self.end_frame_num = 0
 
     def set_frames(self, frames):
         self._frames = frames
@@ -54,7 +61,7 @@ class VoiceDetector:
                 num_voiced = len([f for f, speech in ring_buffer if speech])
                 if num_voiced > 0.9 * ring_buffer.maxlen:
                     triggered = True
-                    # voice_start_timestamp = ring_buffer[0][0].timestamp
+                    segment.start_frame_num = ring_buffer[0][0].num
                     for f, s in ring_buffer:
                         self.voice_frames.append(f)
                     ring_buffer.clear()
@@ -64,15 +71,14 @@ class VoiceDetector:
                 num_unvoiced = len(
                     [f for f, speech in ring_buffer if not speech])
                 if num_unvoiced > 0.9 * ring_buffer.maxlen:
-                    # voice_end_timestamp = frame.timestamp + frame.duration
+                    segment.end_frame_num = frame.num
                     segment.set_frames(self.voice_frames)
                     triggered = False
                     yield segment
                     ring_buffer.clear()
-                    self.voice_frames = []
+                    # self.voice_frames = []
         if triggered:
-            # voice_end_timestamp = frame.timestamp + frame.duration
-            pass
+            segment.end_frame_num = frame.num
         if self.voice_frames:
             segment.set_frames(self.voice_frames)
             yield segment

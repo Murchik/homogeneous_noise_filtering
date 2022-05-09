@@ -23,14 +23,22 @@ af = AudioFile()
 audio, sr = af.wavread("audio/test_long_32kHz.wav")
 
 # Поделить трек на фреймы
-frame_duration = 30
+frame_duration = 10
 frames = af.getframes(frame_duration)
 
-# Выбрать такие группы фреймов (сегменты), в которых отсутствует речь
-# TODO
+# Выбрать группы фреймов (сегменты) с речью
+vd = VoiceDetector(sr, frame_duration, 300, 3)
+segments = vd.get_voice_segments_gen(frames)
 
-# Найти сегменты без речи
-# TODO
+# Выбрать сегменты, в которых отсутствует речь
+noise_frames = []
+num = 0
+widening = 5
+for i, segment in enumerate(segments):
+    start = segment.start_frame_num - widening
+    for frame in frames[num:start]:
+        noise_frames.append(frame)
+    num = segment.end_frame_num + widening
 
 # Выделить из сегментов без речи общие черты (шум)
 # TODO
@@ -38,16 +46,12 @@ frames = af.getframes(frame_duration)
 # Вычесть из всего трека шум
 # TODO
 
-# Записать трек в файл
-af.wavwrite("out.wav")
+seg = vs()
 
-# Нахождение сегментов с речью
-vd = VoiceDetector(sr, frame_duration, 300, 3)
-segments = vd.get_voice_segments_gen(frames)
+# Запись речи в файл
+seg._frames = vd.voice_frames
+write_wave('out_voice.wav', vs.get_bytes(seg), sr)
 
-# Запись сегментов с речью в отдельные файлы
-for i, segment in enumerate(segments):
-    plot.signal(vs.get_signal(segment), sr)
-    path = 'out_chunk-%002d.wav' % (i,)
-    print(' Writing %s' % (path,))
-    write_wave(path, vs.get_bytes(segment), sr)
+# Запись шума в файл
+seg._frames = noise_frames
+write_wave('out_noise.wav', vs.get_bytes(seg), sr)

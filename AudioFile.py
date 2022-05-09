@@ -5,11 +5,13 @@ import numpy as np
 
 class Frame(object):
     samples: np.ndarray
+    num: int
     timestamp: float
     duration_s: float
 
-    def __init__(self, samples, timestamp, duration):
+    def __init__(self, samples, num, timestamp, duration):
         self.samples = samples
+        self.num = num
         self.timestamp = timestamp
         self.duration_s = duration
 
@@ -65,9 +67,11 @@ class AudioFile:
         frames = []
         timestamp = 0.0
         frame_duration_s = n / self.sample_rate
+        i = 0
         while offset + n < len(self.signal):
             frames.append(Frame(self.signal[offset:offset + n],
-                                timestamp, frame_duration_s))
+                                i, timestamp, frame_duration_s))
             timestamp += frame_duration_s
             offset += n
+            i += 1
         return frames
