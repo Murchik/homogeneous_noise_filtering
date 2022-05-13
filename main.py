@@ -17,7 +17,7 @@ def wavwrite_segment(segment, path):
 
 
 audio_sig = Audio()
-_, sample_rate = audio_sig.wavread("audio/test_long_long_32kHz_loud.wav")
+_, sample_rate = audio_sig.wavread("audio/test_long_32kHz_loud.wav")
 
 frame_duranion_ms = 30
 frames = audio_sig.get_signal_frames(frame_duranion_ms)
