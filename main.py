@@ -1,57 +1,42 @@
-import sys
-import wave
+import matplotlib.pyplot as plt
+import numpy as np
 import contextlib
+import wave
 
-import plot
-
-from AudioFile import AudioFile
+from AudioSignal import Audio
 from VoiceDetection import VoiceDetector
-from VoiceDetection import VoiceSegment as vs
 
 
-def write_wave(path, audio, sample_rate):
+def wavwrite_segment(segment, path):
+    segment_signal_bytes = segment.get_frames_bytes()
     with contextlib.closing(wave.open(path, 'wb')) as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(audio)
+        wf.setframerate(32000)
+        wf.writeframes(segment_signal_bytes)
 
 
-af = AudioFile()
+audio_sig = Audio()
+_, sample_rate = audio_sig.wavread("audio/test_long_long_32kHz_loud.wav")
 
-# Прочитать трек из файла
-audio, sr = af.wavread("audio/test_long_32kHz.wav")
+frame_duranion_ms = 30
+frames = audio_sig.get_signal_frames(frame_duranion_ms)
 
-# Поделить трек на фреймы
-frame_duration = 10
-frames = af.getframes(frame_duration)
+vd = VoiceDetector(sample_rate, frame_duranion_ms)
+voice_segments = vd.get_voice_segments(frames)
+noise_segments = vd.get_silence_segments(frames)
 
-# Выбрать группы фреймов (сегменты) с речью
-vd = VoiceDetector(sr, frame_duration, 300, 3)
-segments = vd.get_voice_segments_gen(frames)
+i = 0
+for segment in voice_segments:
+    path = 'out_voice_chunk-%002d.wav' % (i,)
+    print(' Writing %s' % (path,))
+    wavwrite_segment(segment, path)
+    i += 1
 
-# Выбрать сегменты, в которых отсутствует речь
-noise_frames = []
-num = 0
-widening = 5
-for i, segment in enumerate(segments):
-    start = segment.start_frame_num - widening
-    for frame in frames[num:start]:
-        noise_frames.append(frame)
-    num = segment.end_frame_num + widening
 
-# Выделить из сегментов без речи общие черты (шум)
-# TODO
-
-# Вычесть из всего трека шум
-# TODO
-
-seg = vs()
-
-# Запись речи в файл
-seg._frames = vd.voice_frames
-write_wave('out_voice.wav', vs.get_bytes(seg), sr)
-
-# Запись шума в файл
-seg._frames = noise_frames
-write_wave('out_noise.wav', vs.get_bytes(seg), sr)
+i = 0
+for segment in noise_segments:
+    path = 'out_noise_chunk-%002d.wav' % (i,)
+    print(' Writing %s' % (path,))
+    wavwrite_segment(segment, path)
+    i += 1
