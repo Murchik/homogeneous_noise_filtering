@@ -1,84 +1,91 @@
 import collections
-import webrtcvad
 
+from webrtcvad import Vad
 
-class VoiceSegment(object):
-    _frames: list
-    start_frame_num: int
-    end_frame_num: int
-
-    def __init__(self):
-        self._frames = []
-        self.start_frame_num = 0
-        self.end_frame_num = 0
-
-    def set_frames(self, frames):
-        self._frames = frames
-
-    def get_frames(self):
-        return self._frames
-
-    def get_bytes(self):
-        """ Объединение семплов всех фреймов в один контейнер bytes """
-        return b''.join([frame.get_bytes() for frame in self._frames if frame])
-
-    def get_signal(self):
-        """ Объединение семплов всех фреймов в один лист семплов """
-        signal = []
-        for frame in self._frames:
-            for sample in frame.samples:
-                signal.append(sample)
-        return signal
+from Segment import Segment
 
 
 class VoiceDetector:
-    sample_rate: int
-    frame_duration_ms: int
-    padding_duration_ms: int
-    vad: webrtcvad.Vad
-    voice_frames: list
+    _sample_rate: int
+    _frame_duration_ms: int
+    _padding_duration_ms: int
+    _mode: int
+    __vad: Vad
 
-    def __init__(self, sample_rate, frame_duration_ms, padding_duration_ms, mode):
-        self.sample_rate = sample_rate
-        self.frame_duration_ms = frame_duration_ms
-        self.padding_duration_ms = padding_duration_ms
-        self.vad = webrtcvad.Vad(mode)
+    def __init__(self, sample_rate, frame_duration_ms, padding_duration_ms=300, mode=2):
+        self._sample_rate = sample_rate
+        self._frame_duration_ms = frame_duration_ms
+        self._padding_duration_ms = padding_duration_ms
+        self._mode = mode
 
-    def get_voice_segments_gen(self, frames):
+        self.__vad = Vad(int(self._mode))
+
+    def get_voice_segments(self, frames):
         num_padding_frames = int(
-            self.padding_duration_ms / self.frame_duration_ms)
+            self._padding_duration_ms / self._frame_duration_ms)
         ring_buffer = collections.deque(maxlen=num_padding_frames)
-
-        self.voice_frames = []
         triggered = False
-        segment = VoiceSegment()
+        voice_segments = []
 
+        frames_with_voice = []
         for frame in frames:
-            is_speech = self.vad.is_speech(frame.get_bytes(), self.sample_rate)
-            # '1' if is_speech else '0'
+            is_voice = self.__vad.is_speech(frame.get_samples_bytes(),
+                                            self._sample_rate)
+            ring_buffer.append((frame, is_voice))
+
             if not triggered:
-                ring_buffer.append((frame, is_speech))
-                num_voiced = len([f for f, speech in ring_buffer if speech])
-                if num_voiced > 0.9 * ring_buffer.maxlen:
+                num_with_voice = len(
+                    [frame for frame, is_voice in ring_buffer if is_voice])
+                if num_with_voice > 0.3 * ring_buffer.maxlen:
                     triggered = True
-                    segment.start_frame_num = ring_buffer[0][0].num
-                    for f, s in ring_buffer:
-                        self.voice_frames.append(f)
+                    for frame, is_voice in ring_buffer:
+                        frames_with_voice.append(frame)
                     ring_buffer.clear()
             else:
-                self.voice_frames.append(frame)
-                ring_buffer.append((frame, is_speech))
-                num_unvoiced = len(
-                    [f for f, speech in ring_buffer if not speech])
-                if num_unvoiced > 0.9 * ring_buffer.maxlen:
-                    segment.end_frame_num = frame.num
-                    segment.set_frames(self.voice_frames)
+                frames_with_voice.append(frame)
+                num_without_voice = len(
+                    [frame for frame, is_voice in ring_buffer if not is_voice])
+                if num_without_voice > 0.3 * ring_buffer.maxlen:
                     triggered = False
-                    yield segment
+                    voice_segments.append(Segment(frames_with_voice))
                     ring_buffer.clear()
-                    # self.voice_frames = []
-        if triggered:
-            segment.end_frame_num = frame.num
-        if self.voice_frames:
-            segment.set_frames(self.voice_frames)
-            yield segment
+                    frames_with_voice = []
+
+        if frames_with_voice:
+            voice_segments.append(Segment(frames_with_voice))
+        return voice_segments
+
+    def get_silence_segments(self, frames):
+        num_padding_frames = int(
+            self._padding_duration_ms / self._frame_duration_ms)
+        ring_buffer = collections.deque(maxlen=num_padding_frames)
+        triggered = False
+        silence_segments = []
+
+        frames_with_silence = []
+        for frame in frames:
+            is_voice = self.__vad.is_speech(frame.get_samples_bytes(),
+                                            self._sample_rate)
+            ring_buffer.append((frame, is_voice))
+
+            if not triggered:
+                num_without_voice = len(
+                    [frame for frame, is_voice in ring_buffer if not is_voice])
+                if num_without_voice > 0.3 * ring_buffer.maxlen:
+                    triggered = True
+                    for frame, _ in ring_buffer:
+                        frames_with_silence.append(frame)
+                    ring_buffer.clear()
+            else:
+                frames_with_silence.append(frame)
+                num_with_voice = len(
+                    [frame for frame, is_voice in ring_buffer if is_voice])
+                if num_with_voice > 0.3 * ring_buffer.maxlen:
+                    triggered = False
+                    silence_segments.append(Segment(frames_with_silence))
+                    ring_buffer.clear()
+                    frames_with_silence = []
+
+        if frames_with_silence:
+            silence_segments.append(Segment(frames_with_silence))
+        return silence_segments
