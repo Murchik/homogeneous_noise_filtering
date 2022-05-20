@@ -5,7 +5,7 @@ import wave
 from Frame import Frame
 
 
-class Audio:
+class AudioSignal:
     _num_channels: int
     _bitrate: int
     _sample_rate: int
@@ -20,7 +20,24 @@ class Audio:
     def get_signal_bytes(self):
         return np.ndarray.tobytes(self.get_signal())
 
-    def get_signal_frames(self, frame_duration_ms=30) -> list:
+    def get_signal_frames(self, frame_duration_ms=20) -> list:
+        signal = self.get_signal()
+        sample_rate = self.get_sample_rate()
+
+        # n - кол-во семплов в одном фрейме
+        # (при длительности фрейма 30ms и sr=32kHz: n = 960)
+        n = int(sample_rate * (frame_duration_ms / 1000.0))
+
+        offset = 0
+        frames = []
+        frame_duration_s = n / sample_rate
+        while offset + n < len(signal):
+            frames.append(Frame(signal[offset:offset + n],
+                                offset, frame_duration_s))
+            offset += n
+        return frames
+
+    def get_frames_from_interval(self, frames_time_start, frames_time_end, frame_duration_ms=20):
         signal = self.get_signal()
         sample_rate = self.get_sample_rate()
 
@@ -33,8 +50,9 @@ class Audio:
         timestamp = 0.0
         frame_duration_s = n / sample_rate
         while offset + n < len(signal):
-            frames.append(Frame(signal[offset:offset + n],
-                                timestamp, frame_duration_s))
+            if(timestamp > frames_time_start and timestamp < frames_time_end):
+                frames.append(Frame(signal[offset:offset + n],
+                                    offset, frame_duration_s))
             timestamp += frame_duration_s
             offset += n
         return frames

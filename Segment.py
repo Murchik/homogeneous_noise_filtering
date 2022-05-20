@@ -1,4 +1,15 @@
 import numpy as np
+import contextlib
+import wave
+
+
+def wavwrite_segment(segment, path):
+    segment_signal_bytes = segment.get_frames_bytes()
+    with contextlib.closing(wave.open(path, 'wb')) as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(32000)
+        wf.writeframes(segment_signal_bytes)
 
 
 class Segment:
