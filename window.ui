@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>560</width>
+    <height>194</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QLineEdit" name="InputVoiceFile">
+   <property name="geometry">
+    <rect>
+     <x>28</x>
+     <y>39</y>
+     <width>411</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;path to the file with voice sognal to process&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="text">
+    <string>Выберете файл для обработки (*.wav)</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="NoiseSampleFile">
+   <property name="geometry">
+    <rect>
+     <x>27</x>
+     <y>69</y>
+     <width>411</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="OutputCleanVoice">
+   <property name="geometry">
+    <rect>
+     <x>28</x>
+     <y>99</y>
+     <width>411</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="RemoveNoise">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>132</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Remove Noise</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="BrowseInput">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>40</y>
+     <width>81</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Выбрать</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="BrowseNoise">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>70</y>
+     <width>81</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Выбрать</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="BrowseOutput">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>102</y>
+     <width>81</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Выбрать</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="GraphsOut">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>140</y>
+     <width>251</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Выводить визуализацию результатов</string>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>NoiseSampleFile</tabstop>
+  <tabstop>OutputCleanVoice</tabstop>
+  <tabstop>RemoveNoise</tabstop>
+  <tabstop>BrowseInput</tabstop>
+  <tabstop>BrowseNoise</tabstop>
+  <tabstop>BrowseOutput</tabstop>
+  <tabstop>InputVoiceFile</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
