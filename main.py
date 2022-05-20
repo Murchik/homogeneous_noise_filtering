@@ -30,14 +30,14 @@ class MainWindow(QMainWindow, Ui_Dialog):
         message = 'Select Noise sample destination'
         directory = 'out'
         files = '*.wav'
-        file_name = QFileDialog.getOpenFileName(self, message, directory, files)
+        file_name = QFileDialog.getSaveFileName(self, message, directory, files)
         self.NoiseSampleFile.setText(file_name[0])
 
     def browseOutFile(self):
         message = 'Select output audio file destination'
         directory = 'out'
         files = '*.wav'
-        file_name = QFileDialog.getOpenFileName(self, message, directory, files)
+        file_name = QFileDialog.getSaveFileName(self, message, directory, files)
         self.OutputCleanVoice.setText(file_name[0])
 
     def removeNoise(self):
