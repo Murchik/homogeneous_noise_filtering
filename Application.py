@@ -3,9 +3,7 @@ from scipy.io import wavfile
 from PyQt6.QtWidgets import QMainWindow, QMessageBox, QApplication, QFileDialog
 
 from AudioSignal import AudioSignal
-from Segment import Segment, wavwrite_segment
-from VoiceActivityDetection import VoiceActivityDetector
-from SpectralGating import filter_noise
+from NoiseRemover import NoiseRemover
 from window import Ui_Dialog
 
 
@@ -17,27 +15,29 @@ class MainWindow(QMainWindow, Ui_Dialog):
         self.BrowseNoise.clicked.connect(self.browseNoiseFile)
         self.BrowseOutput.clicked.connect(self.browseOutFile)
         self.RemoveNoise.clicked.connect(self.removeNoise)
-    
 
     def browseInput(self):
         message = 'Select Audio with voice for processing'
         directory = 'audio'
         files = '*.wav'
-        file_name = QFileDialog.getOpenFileName(self, message, directory, files)
+        file_name = QFileDialog.getOpenFileName(
+            self, message, directory, files)
         self.InputVoiceFile.setText(file_name[0])
 
     def browseNoiseFile(self):
         message = 'Select Noise sample destination'
         directory = 'out'
         files = '*.wav'
-        file_name = QFileDialog.getSaveFileName(self, message, directory, files)
+        file_name = QFileDialog.getSaveFileName(
+            self, message, directory, files)
         self.NoiseSampleFile.setText(file_name[0])
 
     def browseOutFile(self):
         message = 'Select output audio file destination'
         directory = 'out'
         files = '*.wav'
-        file_name = QFileDialog.getSaveFileName(self, message, directory, files)
+        file_name = QFileDialog.getSaveFileName(
+            self, message, directory, files)
         self.OutputCleanVoice.setText(file_name[0])
 
     def removeNoise(self):
@@ -56,36 +56,17 @@ class MainWindow(QMainWindow, Ui_Dialog):
         outputFileName = self.BrowseOutput.text()
         if len(outputFileName) == 0 or outputFileName == "Выбрать":
             outputFileName = "out/out_clean_voice.wav"
-                
-        frame_duration_ms = 20
 
-        # Чтение файла и разбитие на фреймы заданной длительности
-        ass = AudioSignal()
-        signal, sr = ass.wavread(inputFileName)
-        frames = ass.get_signal_frames(frame_duration_ms)
+        ass = AudioSignal(inputFileName)
+        sr = ass.get_sample_rate()
 
-        # Нахождение участков с речью
-        vad = VoiceActivityDetector(inputFileName, frame_duration_ms)
-        detected_windows = vad.detect_speech()
-        speech_timestamps = vad.get_timestamps(detected_windows)
+        nr = NoiseRemover()
 
-        # Выбор фреймов исходного сигнала в которых отсутствует речь
-        noise_frames = []
-        noise_start = 0
-        for timestamp in speech_timestamps:
-            speech_start = timestamp["speech_begin"]
-            speech_end = timestamp["speech_end"]
-            for frame in ass.get_frames_from_interval(noise_start, speech_start):
-                noise_frames.append(frame)
-            noise_start = speech_end
+        clean_signal, noise_sample = nr.removeNoise(
+            ass, visual=self.GraphsOut.isChecked())
 
-        # Запись выделенного образца шума в файл
-        wavwrite_segment(Segment(noise_frames), noiseFileName)
+        wavfile.write(noiseFileName, sr, noise_sample)
 
-        # Вычетание шума из исходного сигнала на основе выделенного образца шума
-        clean_signal = filter_noise(inputFileName, noiseFileName, visual=self.GraphsOut.isChecked())
-
-        # Запись очищенного сигнала в файл
         wavfile.write(outputFileName, sr, clean_signal)
 
         dialog = QMessageBox(self)

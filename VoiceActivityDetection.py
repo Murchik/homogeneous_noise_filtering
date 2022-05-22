@@ -1,12 +1,15 @@
 import numpy as np
 import scipy.io.wavfile as wf
 
+from Frame import Frame, _get_signal_from_frames
+
 
 class VoiceActivityDetector():
-    def __init__(self, wave_input_filename, sample_window_ms=20, sample_overlap_ms=10):
-        self._read_wavefile(wave_input_filename)._convert_to_mono()
-        self.sample_window = sample_window_ms / 1000
-        self.sample_overlap = sample_overlap_ms / 1000
+    def __init__(self, sample_window_ms=20, sample_overlap_ms=10):
+        self.sample_window_ms = sample_window_ms
+        self.sample_overlap_ms = sample_overlap_ms
+        self.sample_window = self.sample_window_ms / 1000
+        self.sample_overlap = self.sample_overlap_ms / 1000
         self.speech_window = 0.5
         self.speech_energy_threshold = 0.2  # % of energy in voice frequency range
         self.speech_start_frequency = 300
@@ -39,12 +42,6 @@ class VoiceActivityDetector():
         data_energy = data_amplitude ** 2
         return data_energy
 
-    def _normalize_energy(self, data_energy):
-        energy_mean = np.mean(data_energy)
-        energy_std = np.std(data_energy)
-        energy_norm = (data_energy - energy_mean) / energy_std
-        return energy_norm
-
     def _connect_energy_with_frequencies(self, data_freq, data_energy):
         energy_freq = {}
         for (i, freq) in enumerate(data_freq):
@@ -67,8 +64,8 @@ class VoiceActivityDetector():
         return sum_energy
 
     def _median_filter(self, x, k):
-        assert k % 2 == 1, "Median filter length must be odd."
-        assert x.ndim == 1, "Input must be one-dimensional."
+        assert k % 2 == 1, "Длина медианного фильтра должна быть нечетной."
+        assert x.ndim == 1, "Входные данные должны быть одномерными."
         k2 = (k - 1) // 2
         y = np.zeros((len(x), k), dtype=x.dtype)
         y[:, k2] = x
@@ -104,11 +101,13 @@ class VoiceActivityDetector():
                 speech_time.append(speech_label)
         return speech_time
 
-    def detect_speech(self):
+    def detect_speech(self, frames: list[Frame], sample_rate):
+        self.rate = sample_rate
         detected_windows = np.array([])
         sample_window = int(self.rate * self.sample_window)
         sample_overlap = int(self.rate * self.sample_overlap)
-        data = self.data
+        data = _get_signal_from_frames(
+            frames, self.rate, self.sample_window_ms)
         sample_start = 0
         start_band = self.speech_start_frequency
         end_band = self.speech_end_frequency
